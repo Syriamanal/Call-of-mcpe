@@ -1,29 +1,211 @@
 <?php
+
 /*
 __PocketMine Plugin__
-name=Call of duty
-description=play call of dut in mcpe
+name=CALL OF MCPE!
+description=H
 version=1.0.0
 author=Syriamanal
-class=mcpe
-apiversion=11,12,13,14,15,16,17,18,19
+class=Spleef
+apiversion=10
 */
+		
+class Spleef implements Plugin{	
+	private $api;
 
-class mcpe implements Plugin{
-    private $api;
+	private $pvp = true;
 
-    public function __construct(ServerAPI $api, $server = false){
-    $this -> api = $api;
-     }
-     
-     
-     public function init(){
-     $this->api->addHandler("player.block.break", array($this,"breakHandler"));
-     $this->api->addHandler("player.death", array($this,"Playerkick"));
-     }
-     public function PlayerDeath ($cmd, $args, $issuer){
-        $this->api->ban->kick($issuer);
-            return true;
-            }
+	
+	private $minute = 30;
+	private $playerspawncount = 0;
+	
+	private $gamestarted = false;
+	
+	private $server;
+	private $servname;
+	
 
+	
+	public function __construct(ServerAPI $api, $server = false){
+		$this->api = $api;
+		$this->server = ServerAPI::request();
+	}
+	
+	public function init(){
+	
+		$this->api->console->register("Call", "Call v1.0.0", array($this, "commandHandler"));
+		
+		$this->api->console->run("d m zombie");
+		$this->api->addHandler("player.spawn", array($this, "eventHandler"), 100);
+		$this->api->addHandler("player.respawn", array($this, "eventHandler"), 100);
+		$this->api->addHandler("player.connect", array($this, "eventHandler"), 100);
+		$this->api->addHandler("player.block.touch", array($this, "eventHandler"), 100);
+		$this->api->addHandler("entity.health.change", array($this, "eventHandler"), 100);
+		
+		
+		$this->api->schedule(1200, array($this, "minuteSchedule"), array(), true);
+		
+		
+		$this->servname = $this->server->name;
+		$this->server->name = "[OPEN] ".$this->servname;
+	}
+	
+	private function getNextSpawn()
+	{
+		$this->playerspawncount = $this->playerspawncount + 1;
+		if($this->playerspawncount <= 16)
+			return $this->spawn_loc[$this->playerspawncount-1];
+		else
+		{
+			$this->playerspawncount = 1;
+			return $this->spawn_loc[$this->playerspawncount-1];
+		}
+	}
+	
+	public function eventHandler($data, $event)
+	{
+		switch($event)
+		{
+			case "player.join":
+				if($this->gamestarted == true)
+				{
+					$data->close();
+				}
+				break;
+			case "player.respawn":
+			case "player.death":
+				if($this->gamestarted == true)
+				{
+					$data['player']->close();
+				}
+				if(count($this->api->player->getAll()) <= 1)
+				{
+					$this->api->chat->broadcast("Call of mcpe has ended");
+					$this->api->console->run("stop");
+				}
+				break;
+			case 'player.connect':
+				if($this->gamestarted === true)
+				{
+					return false;
+				}
+				break;
+			case 'player.block.touch':
+				if($this->gamestarted === false)
+				{
+					return false;
+				}
+				break;
+			case 'entity.health.change':
+				if($this->gamestarted === false)
+				{
+					return false;
+				}
+				break;
+			case "player.spawn":
+				if($this->gamestarted === true)
+				{
+					$data->close("The Game has already started!", false);
+					break;
+				}
+				
+				$nextspawn = $this->getNextSpawn();
+				$data->teleport(new Vector3($nextspawn[0], $nextspawn[1], $nextspawn[2]));
+				$data->blocked = true;
+				
+				$data->sendChat("----------------------------------------------------");
+				$data->sendChat("");
+				$data->sendChat("Current Players: ".count($this->api->player->getAll())."/".$this->server->maxClients);
+				$data->sendChat("");
+				$data->sendChat("");
+		
+		$this->api->addHandler("player.join", array($this, "eventHandler"), 100);
+		$this->api->addHandler("player.death", array($this, "eventHandler"), 100);
+				$data->sendChat("----------------------------------------------------");
+				break;
+		}
+	}
+	
+	private function startGame()
+	{		
+		$this->gamestarted = true;
+		$this->server->name = "[IN PROGRESS] ".$this->servname;
+		$this->playerspawncount = 0;
+		foreach($this->api->player->getAll() as $p)
+		{
+			$nextspawn = $this->getNextSpawn();
+			$p->teleport(new Vector3($nextspawn[0], $nextspawn[1], $nextspawn[2]));
+			
+			$p->setGamemode(0);
+			
+			$p->blocked = false;
+		}
+	}	
 
+	public function minuteSchedule()
+	{
+		$this->minute--;
+		if($this->minute > 25 and $this->minute <= 30)
+		{
+			$this->api->chat->broadcast("----------------------------------------------------");
+			$this->api->chat->broadcast("");
+			$this->api->chat->broadcast("Current Players: ".count($this->api->player->getAll())."/".$this->server->maxClients);
+			$this->api->chat->broadcast("");
+			$this->api->chat->broadcast("");
+			$this->api->chat->broadcast("".($this->minute-25)." minutes left until Spleef starts.");
+			$this->api->chat->broadcast("----------------------------------------------------");
+		}
+		if($this->minute == 25)
+		{
+			$this->api->chat->broadcast("PVP Has Been Dissabled");
+			$this->api->chat->broadcast("Go!");
+			$this->api->chat->broadcast("Go!");
+			$this->startGame();
+		}
+		if($this->minute < 25 and $this->minute > 1)
+		{
+			$this->api->chat->broadcast(($this->minute)." minutes left");
+		}
+		if($this->minute == 1)
+		{
+			$this->api->chat->broadcast("The Games Is About To Finsh!");
+		}
+		if($this->minute == 0)
+		{
+			$this->api->chat->broadcast("Fixing All Blocks In Game");
+			$this->api->console->run("stop");
+		}
+	}
+	
+	public function commandHandler($cmd, $params, $issuer, $alias){
+		$output = "";
+		if($cmd != "SF")
+		{
+			$output .= "Called via wrong command. Exiting..";
+			return $output;
+		}
+			
+		if($issuer instanceof Player)
+		{
+			$output .= "Command can only be run by console. Exiting...";
+			return $output;
+		}
+			
+		switch(array_shift($params)){
+			case "settimer":
+				$this->minute = array_shift($params);
+				$output .= "Success";
+				break;
+			case "gettimer":
+				$output .= $this->minute."\n";
+				break;
+		}
+		return $output;
+	}
+	
+	public function __destruct()
+	{
+		
+	}
+
+}
