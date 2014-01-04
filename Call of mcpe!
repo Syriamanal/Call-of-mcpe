@@ -1,1 +1,29 @@
 <?php
+/*
+__PocketMine Plugin__
+name=Call of duty
+description=play call of dut in mcpe
+version=1.0.0
+author=Syriamanal
+class=mcpe
+apiversion=11,12,13,14,15,16,17,18,19
+*/
+
+class mcpe implements Plugin{
+    private $api;
+
+    public function __construct(ServerAPI $api, $server = false){
+    $this -> api = $api;
+     }
+     
+     
+     public function init(){
+     $this->api->addHandler("player.block.break", array($this,"breakHandler"));
+     $this->api->addHandler("player.death", array($this,"Playerkick"));
+     }
+     public function PlayerDeath ($cmd, $args, $issuer){
+        $this->api->ban->kick($issuer);
+            return true;
+            }
+
+
