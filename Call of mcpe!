@@ -3,14 +3,14 @@
 /*
 __PocketMine Plugin__
 name=CALL OF MCPE!
-description=H
+description=
 version=1.0.0
 author=Syriamanal
-class=Spleef
+class=Call
 apiversion=10
 */
 		
-class Spleef implements Plugin{	
+class Call implements Plugin{	
 	private $api;
 
 	private $pvp = true;
@@ -36,6 +36,7 @@ class Spleef implements Plugin{
 		$this->api->console->register("Call", "Call v1.0.0", array($this, "commandHandler"));
 		
 		$this->api->console->run("d m zombie");
+		$this->api->console->run("give @all 247");
 		$this->api->addHandler("player.spawn", array($this, "eventHandler"), 100);
 		$this->api->addHandler("player.respawn", array($this, "eventHandler"), 100);
 		$this->api->addHandler("player.connect", array($this, "eventHandler"), 100);
@@ -157,7 +158,7 @@ class Spleef implements Plugin{
 		}
 		if($this->minute == 25)
 		{
-			$this->api->chat->broadcast("PVP Has Been Dissabled");
+			$this->api->chat->broadcast("PVP Has Been Enabled!");
 			$this->api->chat->broadcast("Go!");
 			$this->api->chat->broadcast("Go!");
 			$this->startGame();
