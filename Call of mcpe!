@@ -36,7 +36,7 @@ class Call implements Plugin{
 		$this->api->console->register("Call", "Call v1.0.0", array($this, "commandHandler"));
 		
 		$this->api->console->run("d m zombie");
-		$this->api->console->run("give @all 247");
+		$this->api->console->run("give @all 247 1");
 		$this->api->addHandler("player.spawn", array($this, "eventHandler"), 100);
 		$this->api->addHandler("player.respawn", array($this, "eventHandler"), 100);
 		$this->api->addHandler("player.connect", array($this, "eventHandler"), 100);
@@ -119,9 +119,8 @@ class Call implements Plugin{
 				$data->sendChat("Current Players: ".count($this->api->player->getAll())."/".$this->server->maxClients);
 				$data->sendChat("");
 				$data->sendChat("");
-		
-		$this->api->addHandler("player.join", array($this, "eventHandler"), 100);
-		$this->api->addHandler("player.death", array($this, "eventHandler"), 100);
+				$this->api->addHandler("player.join", array($this, "eventHandler"), 100);
+				$this->api->addHandler("player.death", array($this, "eventHandler"), 100);
 				$data->sendChat("----------------------------------------------------");
 				break;
 		}
@@ -173,7 +172,7 @@ class Call implements Plugin{
 		}
 		if($this->minute == 0)
 		{
-			$this->api->chat->broadcast("Fixing All Blocks In Game");
+			$this->api->chat->broadcast("Removeing All Dead Zombies...");
 			$this->api->console->run("stop");
 		}
 	}
